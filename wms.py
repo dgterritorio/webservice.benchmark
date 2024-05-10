@@ -1,6 +1,6 @@
 import sys, os
 import random
-import urllib.parse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from locust import FastHttpUser, events, task, between, run_single_user
 from owslib.wms import WebMapService
 
@@ -158,12 +158,73 @@ class WMSBenchmark(FastHttpUser):
         # bbox = next(generate_random_bbox(*self.bbox))
         bbox_str = ",".join(map(str, bbox))
 
-        # Constructing the URL path #&srs={self.srs}
-        url_path = f"{self.host}?service=WMS&version=1.3.0&request=GetMap&layers={self.layer_name}&styles=&bbox={bbox_str}&width=512&height=512&crs={self.crs}&format={self.layer_mimetype}"
-
+        url_path = self.get_url(bbox_str)
+        
         # Making the GET request to load the map
         logger.debug(f"URL for request: {url_path}")
         response = self.client.get(url_path)
+    
+    def get_url(self,bbox_str):
+        """
+        Construct a URL for a GetMap request to the WMS service.
+
+        This method constructs a URL using the base host URL and additional query parameters 
+        required for the WMS GetMap request. The `urllib.parse` module is used to handle cases 
+        where the base host URL already contains query parameters.
+
+        Parameters:
+        bbox_str (str): A string representing the bounding box coordinates in the format 
+                        "minx,miny,maxx,maxy".
+
+        Returns:
+        str: The full URL for the WMS GetMap request.
+        
+        Example:
+        bbox_str = "-143566.40427116063,36617.15748174256,-133566.40427116063,46617.15748174256"
+        full_url = get_url(bbox_str)
+        # Example return URL:
+        # "https://ortos.dgterritorio.gov.pt/cgi-bin/mapserv.exe?map=%2Fms4w%2Fapps%2Fmapfile%2Fmosaico2023.map&service=WMS&version=1.3.0&request=GetMap&layers=ortoSat2023-CorVerdadeira&styles=&bbox=-143566.40427116063%2C36617.15748174256%2C-133566.40427116063%2C46617.15748174256&width=512&height=512&crs=EPSG%3A3763&format=image%2Fpng"
+        """
+        
+        """
+        From the bbox string numbers it creates a url based on class (self) information, 
+        implements urllib.parse due to https://host/cgi-bin/mapserv.exe?map=/mapfiles/my.map
+        url structure that implements ? on its url causing conflicts with url queries 
+        
+        bbox_str example -143566.40427116063,36617.15748174256,-133566.40427116063,46617.15748174256
+        """
+        # TODO: obtain WMS and version from generic class arguments
+        # TODO: Width/Height is not implementend
+        
+        params = {
+            "service": "WMS",
+            "version": "1.3.0",
+            "request": "GetMap",
+            "layers": self.layer_name,
+            "styles": "",
+            "bbox": bbox_str,
+            "width": "512",
+            "height": "512",
+            "crs": self.crs,
+            "format": self.layer_mimetype
+            }
+        # Parse the base URL
+        url_parts = urlparse(self.host)
+
+        # Extract existing query parameters
+        query_params = parse_qs(url_parts.query)
+
+        # Update the query parameters with the new ones
+        query_params.update(params)
+
+        # Rebuild the query string
+        new_query = urlencode(query_params, doseq=True)
+
+        # Construct the new URL
+        new_url_parts = url_parts._replace(query=new_query)
+        full_url = urlunparse(new_url_parts)
+
+        return full_url
 
 
 # Example running code snippet would be similar to your WMTS benchmark
@@ -183,14 +244,14 @@ if __name__ == "__main__":
     wms_benchmark = WMSBenchmark(env)
     env.parsed_options = type("", (), {})()  # Create a simple class to hold options
 
-    # wms_benchmark.host = "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0"
-    #wms_benchmark.host = "https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023"
-    wms_benchmark.host="https://ortos.dgterritorio.gov.pt/cgi-bin/mapserv.exe?map=/ms4w/apps/mapfile/mosaico2023.map"
+    wms_benchmark.host = "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0"
+    #wms_benchmark.host="https://ortos.dgterritorio.gov.pt/cgi-bin/mapserv.exe?map=/ms4w/apps/mapfile/mosaico2023.map"
     env.parsed_options.random_seed = 72
     env.parsed_options.bbox_area = 100  # square km (10km x 10km)
     env.parsed_options.bbox_ratio = 1.0
     #env.parsed_options.layer_name = "Ortoimagens2023-RGB"
-    env.parsed_options.layer_name = "Mosaico2023-RGB"
+    env.parsed_options.layer_name = "Actueel_ortho25"
+    #env.parsed_options.layer_name= "ortoSat2023-CorVerdadeira"
     wms_benchmark.environment = env
     # Directly call the on_start to use the setup (if any exception handling, do here)
     try:

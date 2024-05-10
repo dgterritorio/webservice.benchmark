@@ -1,5 +1,8 @@
 import sys, random
 import urllib.parse
+
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
 from locust import FastHttpUser, events, task, between
 from owslib.wmts import WebMapTileService
 
@@ -215,9 +218,72 @@ class WMTSBenchmark(FastHttpUser):
         tile_col = next(self.gen_col)
         tile_row = next(self.gen_row)
 
-        url_path = f"{self.host}?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER={self.layer_name}&STYLE=default&FORMAT={self.layer_mimetype}&TILEMATRIXSET={self.tile_matrix_set}&TILEMATRIX={self.tile_matrix_value}&TILEROW={tile_row}&TILECOL={tile_col}"
+        #url_path = f"{self.host}?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&
+        #LAYER={self.layer_name}&STYLE=default&
+        #FORMAT={self.layer_mimetype}&TILEMATRIXSET={self.tile_matrix_set}
+        #&TILEMATRIX={self.tile_matrix_value}&
+        #TILEROW={tile_row}&TILECOL={tile_col}"
+        
+        url_path = self.get_url(tile_col,tile_row)
         logger.debug(f"URL for request: {url_path}")
+        
         response = self.client.get(url_path)
+
+    def get_url(self,tile_col,tile_row):
+        """
+        Construct a URL for a GetTile request to the WMTS service.
+
+        This method constructs a URL using the base host URL and additional query parameters 
+        required for the WMTS GetTile request. The `urllib.parse` module is used to handle cases 
+        where the base host URL already contains query parameters.
+        
+        Parameters:
+        tile_col (int): The column index of the tile.
+        tile_row (int): The row index of the tile.
+
+        Returns:
+        str: The full URL for the WMTS GetTile request.
+        
+        Example:
+        tile_col = 56
+        tile_row = 108
+        url = get_url(tile_col, tile_row)
+        # Example return URL:
+        # https://cartografia.dgterritorio.gov.pt/ortos2021/service?service=WMTS&version=1.0.0&request=GetTile&layer=Ortos2021-RGB&style=default&tilematrix=07&tilematrixset=PTTM_06&tilerow=108&tilecol=56&format=image%2Fpng
+        """
+        # TODO: Obtain WMTS and version from generic class arguments
+        # TODO: Width/Height is not implemented
+        # TODO: obtain WMTS and version from generic class arguments
+        # TODO: Width/Height is not implementend
+
+        params = {
+            "service": "WMTS",
+            "version": "1.0.0",
+            "request": "GetTile",
+            "layer": self.layer_name,
+            "style": "default",
+            "tilematrix": self.tile_matrix_value,
+            "tilematrixset": self.tile_matrix_set,
+            "tilerow": tile_row,
+            "tilecol": tile_col,
+            "format": self.layer_mimetype
+            }
+        # Parse the base URL
+        url_parts = urlparse(self.host)
+
+        # Extract existing query parameters
+        query_params = parse_qs(url_parts.query)
+
+        # Update the query parameters with the new ones
+        query_params.update(params)
+
+        # Rebuild the query string
+        new_query = urlencode(query_params, doseq=True)
+
+        # Construct the new URL
+        new_url_parts = url_parts._replace(query=new_query)
+        full_url = urlunparse(new_url_parts)
+        return full_url
 
 
 def random_number_generator(min_value, max_value, seed=None):
