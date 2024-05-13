@@ -41,6 +41,16 @@ requirements.txt file pins the necessary packages and version for script to run
 pip install -r requirements.txt
 ```
 
+## Docker build and run
+
+To avoid local host python package installs we can use docker, on local project directory.
+
+```bash
+docker build --no-cache --progress=plain -t website.benchmark:v0.0.1 -f Dockerfile .
+```
+
+For docker run example look into subsection on WMS/WMTS  commands
+
 ## WMS Commands (headless)
 
 Script `wms.pt` contains the code for testing a WMS webservice, it creates a locust webtest frameworks, extends and validates argument user input specifically for wms.
@@ -55,6 +65,7 @@ In a nutshell:
 |Argument|Description| Example| Default |
 |:------:|:---------:|:-------:|:---------:|
 | `-h/-host`   | Host/Server will full OGC service path | [https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023](https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023) | Mandatory NO default |
+|`--headless`| For locust to run on command line mode | --headless | Default locust is working on webgui|
 |`--random-seed`|  Random seed to generate random request |   --random-seed 2129 | 1640 |
 |`--layer-name` | OGC service layer to be used | --layer-name Ortoimagens2023-IRG| First layer in service found on GetCapabilites XML document |
 |`--bbox-area`| Area of bounding box for GetMap request km2| --bbox-area 50.0 | Default of 100.0|
@@ -68,6 +79,23 @@ locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  
 
 The graphics and requests made will be in file: `ortoimagens2023_u10_r1_t2_s7776.html`
 That can be open in a normal browser
+
+### Docker run WMS
+
+Docker run will has `ENTRYPOINT ["locust"]` therefore all the arguments after the `locust` should be accepted:
+
+```bash
+mkdir reports logs
+docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs \
+benchmark:v0.0.1 \  
+-f wms.py --host https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0  \
+--random-seed 4832 --bbox-area 100 --layer-name 2021_orthoHR  \
+--headless -u 10 -r 1 -t 2m \ 
+--html /reports/luchtfotorgb_u10_r1_t2_s4832.html \
+--loglevel DEBUG --logfile /logs/luchtfotorgb_u10_r1_t2_s4832.log 
+```
+
+We implement the reports and logs directory mounts from local host to container (`-v $(pwd)/reports:/reports -v $(pwd)/logs:/logs`) and then the docker image name `benchmark:v0.0.1`
 
 ## WMTS Commands (headless)
 
@@ -83,11 +111,11 @@ In a nutshell:
 |Argument|Description| Example| Default |
 |:------:|:---------:|:-------:|:---------:|
 | `-h/-host`   | Host/Server will full OGC service path | [https://cartografia.dgterritorio.gov.pt/ortos2021/service](https://cartografia.dgterritorio.gov.pt/ortos2021/service) | Mandatory NO default |
+|`--headless`| For locust to run on command line mode | --headless | Default locust is working on webgui|
 |`--random-seed`|  Random seed to generate random request |   --random-seed 2129 | 1640 |
 |`--layer-name`| OGC service layer to be used| --layer-name Ortos2021-RGB | First layer in service found on GetCapabilites XML document|
 |`--tile-matrix-set`| Layer's TileMatrixSet to test (Piramid Tile Type)| --tile-matrix-set "PTTM_06"| Layer's first TileMatrixSet found on GetCapabilities XML document|  
 |`--tile-matrix`| TileMatrixSet's TileMatrix to use (Piramid's zoom/resolution level)| --tile-matrix "07"| Median value (normally 07 or 10)|
-|`--headless`| For locust to run on command line mode | --headless | Default locust is working on webui|
 |`--u` | Number of requests (Number of locust users) | -u 10| No default |
 |`-r` | Increase rate of rquests (Number of locust users)| -r 1| No default|
 |`-t`| Time of testing, full time to run test (s, m, h)| -t 4m | No default|
@@ -102,6 +130,23 @@ locust -f wmts.py --headless --host https://cartografia.dgterritorio.gov.pt/orto
 ```
 
 Note: `2>&1 | tee wmts.ortos2021.r1.u1.s1640.txt` will pipe bash consolte content to file `tee wmts.ortos2021.r1.u1.s1640.txt`
+
+### Docker run WMTS
+
+Docker run will has `ENTRYPOINT ["locust"]` therefore all the arguments after the `locust` should be accepted:
+
+```bash
+mkdir reports logs
+docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs \
+benchmark:v0.0.1 \  
+-f wmts.py --host  https://cartografia.dgterritorio.gov.pt/ortos2021/service   \
+--random-seed 2129 --bbox-area 100 --layer-name Ortos2021-RGB  \
+--headless -u 10 -r 1 -t 2m \ 
+--html /reports/wmts.ortos2021_u10_r1_t2_s4832.html \
+--loglevel DEBUG --logfile /logs/wmts.ortos2021_u10_r1_t2_s4832.log 
+```
+
+We implement the reports and logs directory mounts from local host to container (`-v $(pwd)/reports:/reports -v $(pwd)/logs:/logs`) and then the docker image name `benchmark:v0.0.1`
 
 ## Live execution
 
