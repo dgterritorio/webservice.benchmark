@@ -158,7 +158,9 @@ locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  
 [2024-04-26 15:45:46,534] moura002/INFO/locust.main: Starting Locust 2.24.1
 ```
 
-Copy paste `http://0.0.0.0:8089` into browser
+Copy paste `http://0.0.0.0:8089` into browser.
+
+Nota: To use the command and local server the  `docker run` will require port configuration e.g: `-p8089:8089`.
 
 ## DGT WMTS
 
