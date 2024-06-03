@@ -41,16 +41,6 @@ requirements.txt file pins the necessary packages and version for script to run
 pip install -r requirements.txt
 ```
 
-## Docker build and run
-
-To avoid local host python package installs we can use docker, on local project directory.
-
-```bash
-docker build --no-cache --progress=plain -t website.benchmark:v0.0.1 -f Dockerfile .
-```
-
-For docker run example look into subsection on WMS/WMTS  commands
-
 ## WMS Commands (headless)
 
 Script `wms.pt` contains the code for testing a WMS webservice, it creates a locust webtest frameworks, extends and validates argument user input specifically for wms.
@@ -131,23 +121,6 @@ locust -f wmts.py --headless --host https://cartografia.dgterritorio.gov.pt/orto
 
 Note: `2>&1 | tee wmts.ortos2021.r1.u1.s1640.txt` will pipe bash consolte content to file `tee wmts.ortos2021.r1.u1.s1640.txt`
 
-### Docker run WMTS
-
-Docker run will has `ENTRYPOINT ["locust"]` therefore all the arguments after the `locust` should be accepted:
-
-```bash
-mkdir reports logs
-docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs \
-benchmark:v0.0.1 \  
--f wmts.py --host  https://cartografia.dgterritorio.gov.pt/ortos2021/service   \
---random-seed 2129 --bbox-area 100 --layer-name Ortos2021-RGB  \
---headless -u 10 -r 1 -t 2m \ 
---html /reports/wmts.ortos2021_u10_r1_t2_s4832.html \
---loglevel DEBUG --logfile /logs/wmts.ortos2021_u10_r1_t2_s4832.log 
-```
-
-We implement the reports and logs directory mounts from local host to container (`-v $(pwd)/reports:/reports -v $(pwd)/logs:/logs`) and then the docker image name `benchmark:v0.0.1`
-
 ## Live execution
 
 By removing the flag `--headless` locust will start a local server and the provided URL can be open in a browser for viewing the live execution:
@@ -194,3 +167,33 @@ env.parsed_options.tile_matrix = "07"
 Note: Attribute values as in the command locust command line structure.
 
 To run tests: `python wmts.py`.
+
+## Docker build and run
+
+Locust is prepared to run as a simple webgui, and all the arguments implemented on `wms.py/wmts.py` should be supported on the webgui.
+
+Docker image is based on image: `docker.io/python:3.12.3-slim-bookworm`
+
+Docker python version should be in sync with pyenv version.
+
+```bash
+docker build --no-cache --progress=plain -t website.benchmark:v0.0.1 -f Dockerfile .
+```
+
+Docker run will has `ENTRYPOINT ["locust"]` therefore all the arguments after the `locust` should be accepted.
+
+`IMPORTANT`: A locust instance should use `wms.py` or `wmts.py` to run it as webgui.
+
+Port setting is done at locust level and docker port forwarding, meaning:
+
+- Set port as locut argument e.g.: `--web-port 8080`, as indicated on docs`--web-port <port number>, -P <port number>`
+- Docker forward like: `p8080:8080`
+
+```bash
+mkdir reports logs
+docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs benchmark:v0.0.1 wms.py  
+```
+
+Then on the ip of machine or local host on the specified port the webenchmark will be active.
+
+![webgui](./pics/webgui.png)

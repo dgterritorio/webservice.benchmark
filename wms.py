@@ -98,10 +98,8 @@ class WMSBenchmark(FastHttpUser):
         self.crs = self.get_crs()
         # self.layer_mimetype = urllib.parse.quote(
         # For now the first format available later to do also as argument
-        self.layer_mimetype = self.wms.getOperationByName("GetMap").formatOptions[
-            0
-        ]  # ['image/jpeg']
-
+        self.layer_mimetype = self.wms.getOperationByName("GetMap").formatOptions[0]  # ['image/jpeg']
+        self.layer_mimetype = "image/png"
         self.bbox = (
             self.get_bbox()
         )  # A generic BBOX, ideally parse GetCapabilities for valid ranges.
