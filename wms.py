@@ -72,6 +72,9 @@ class WMSBenchmark(FastHttpUser):
         """
         On start, fetch the WMS capabilities to determine layers and other parameters.
         """
+        # Timout extended for very slow servers
+        self.client.timeout = 120  # timeout is in seconds
+
         self.wms = WebMapService(self.host)
         self.layers = self.get_layers()
         self.layer_name = self.environment.parsed_options.layer_name

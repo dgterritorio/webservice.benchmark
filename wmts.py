@@ -92,6 +92,9 @@ class WMTSBenchmark(FastHttpUser):
         On start, fetch the WMtS capabilities to determine layers and tilematrixsets.
         /hwh/luchtfotorgb/wmts/v1_0/{layer_identifier}/{tile_matrix_set}/{tile_matrix}/{tile_col}/{tile_row}.jpeg"
         """
+        # Timout extended for very slow servers
+        self.client.timeout = 120  # timeout is in seconds
+
         self.wmts = WebMapTileService(self.host)
 
         self.layers = list(self.wmts.contents.keys())
