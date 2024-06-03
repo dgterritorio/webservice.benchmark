@@ -191,7 +191,7 @@ Port setting is done at locust level and docker port forwarding, meaning:
 
 ```bash
 mkdir reports logs
-docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs benchmark:v0.0.1 wms.py  
+docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs benchmark:v0.0.1 wms.py  --web-port 8080
 ```
 
 Then on the ip of machine or local host on the specified port the webenchmark will be active.

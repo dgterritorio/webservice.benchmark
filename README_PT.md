@@ -190,7 +190,8 @@ A configuração da porta é feita ao nível do locust e do encaminhamento de po
 
 ```bash
 mkdir reports logs
-docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs benchmark:v0.0.1 wms.py  
+docker run -d --restart always -p8080:8080 -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs website.benchmark:v0.0.1 -f wms.py --web-port 8080
+
 ```
 
 Em seguida, no IP da máquina ou localhost na porta especificada, o webenchmark estará ativo.
