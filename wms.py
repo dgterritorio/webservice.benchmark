@@ -37,6 +37,7 @@ def init_parser(parser):
     parser.add_argument(
         "--layer-name",
         type=str,
+        default="",
         help="Layer to be used for benchmarking. if not set, will default to service's first layer",
     )
     parser.add_argument(
@@ -52,7 +53,6 @@ def init_parser(parser):
         help="Bounding box width/height ratio, better to keep it as 1.0 (square)",
     )
     
-
 
 class WMSBenchmark(FastHttpUser):
     """
@@ -75,6 +75,7 @@ class WMSBenchmark(FastHttpUser):
         self.wms = WebMapService(self.host)
         self.layers = self.get_layers()
         self.layer_name = self.environment.parsed_options.layer_name
+        logger.info(f"layer_name is {'empty' if self.layer_name == '' else self.layer_name}")
         if self.layer_name:
             if self.layer_name not in self.layers:
                 error_message = (
@@ -87,7 +88,7 @@ class WMSBenchmark(FastHttpUser):
                 pass  # all good with layer name
         else:  # user didnt defined layer
             logger.info(
-                f"No --layer-name argument, using first layer available in service"
+                f"No  --layer-name argument value, using first layer available in service"
             )
             self.layer_name = self.layers[0]  # we will only use the first layer
 
@@ -242,14 +243,12 @@ if __name__ == "__main__":
     wms_benchmark = WMSBenchmark(env)
     env.parsed_options = type("", (), {})()  # Create a simple class to hold options
 
-    wms_benchmark.host = "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0"
-    #wms_benchmark.host="https://ortos.dgterritorio.gov.pt/cgi-bin/mapserv.exe?map=/ms4w/apps/mapfile/mosaico2023.map"
+    #wms_benchmark.host = "https://service.pdok.nl/hwh/luchtfotorgb/wms/v1_0"
+    wms_benchmark.host="https://ortos.dgterritorio.gov.pt/cgi-bin/mapserv.exe?map=/ms4w/apps/mapfile/mosaico2023.map"
     env.parsed_options.random_seed = 72
     env.parsed_options.bbox_area = 100  # square km (10km x 10km)
     env.parsed_options.bbox_ratio = 1.0
-    #env.parsed_options.layer_name = "Ortoimagens2023-RGB"
-    env.parsed_options.layer_name = "Actueel_ortho25"
-    #env.parsed_options.layer_name= "ortoSat2023-CorVerdadeira"
+    env.parsed_options.layer_name = "" # None default to pick up first layer
     wms_benchmark.environment = env
     # Directly call the on_start to use the setup (if any exception handling, do here)
     try:

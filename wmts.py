@@ -58,7 +58,7 @@ def init_parser(parser):
     parser.add_argument(
         "--layer-name",
         type=str,
-        default=None,
+        default="",
         help="Layer to be used for benchmarking. if not set, will default to service's first layer",
     )
     parser.add_argument(
@@ -97,15 +97,14 @@ class WMTSBenchmark(FastHttpUser):
         self.layers = list(self.wmts.contents.keys())
         ##### TO BE REFACTORED ####
         self.layer_name = self.environment.parsed_options.layer_name
+        logger.info(f"layer_name is {'empty' if self.layer_name == '' else self.layer_name}")
         if self.layer_name:  # user implemented argument
-
             if self.layer_name not in self.layers:
                 error_message = (
                     f"The specified layer '{self.layer_name}' is not available in the WMTS service. "
                     f"Please check the layer name for any typos or omit the '--layer-name' argument to use the first available layer.  "
                     f"Available layers in service: {self.layers}"
                 )
-
                 raise LayerNameArgError(error_message)
 
         else:  # user didnt defined layer
