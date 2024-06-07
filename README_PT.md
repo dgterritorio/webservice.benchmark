@@ -194,4 +194,14 @@ docker run -d --restart always -p8080:8080 -v $(pwd)/reports:/reports -v $(pwd)/
 
 ```
 
-Em seguida, no IP da máquina ou localhost na porta especificada, o webenchmark estará ativo.
+## Cron jobs (tarefas diarias)
+
+Os cron jobs podem ser implementados usando o [run_benchmark_wms_cron.sh](./run_benchmark_wms_cron.sh) para WMS e o [run_benchmark_wmts_cron.sh](./run_benchmark_wmts_cron.sh) para WMTS. Estes scripts funcionam com definições de layer e host, e depois guardam os resultados nos diretórios reports e logs.
+
+Com crontab -e como root, é possível configurar os cron jobs desta forma:
+
+```bash
+crontab -e
+30 11 * * * /opt/webservice.benchmark/run_benchmark_wms_cron.sh "https://geo2.dgterritorio.gov.pt/geoserver/caop_continente/wms" "Freguesias"
+15 11 * * * /opt/webservice.benchmark/run_benchmark_wmts_cron.sh "https://cartografia.dgterritorio.gov.pt/ortos2018/service" "Ortos2018-RGB"
+```

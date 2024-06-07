@@ -191,9 +191,21 @@ Port setting is done at locust level and docker port forwarding, meaning:
 
 ```bash
 mkdir reports logs
-docker run --rm -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs benchmark:v0.0.1 wms.py  --web-port 8080
+docker run -d --restart always -p8080:8080 -v $(pwd)/reports:/reports -v $(pwd)/logs:/logs website.benchmark:v0.0.1 -f wms.py --web-port 8080
 ```
 
 Then on the ip of machine or local host on the specified port the webenchmark will be active.
 
 ![webgui](./pics/webgui.png)
+
+## Cron jobs
+
+The cron jobs can be implemmented using the [run_benchmark_wms_cron.sh](./run_benchmark_wms_cron.sh) for WMS and [run_benchmark_wmts_cron.sh](./run_benchmark_wmts_cron.sh), these script work with layer and host defintions and then save the results in the reports and logs directory.  
+
+With `crontab -e` as root it is possible set the cron jobs like this:
+
+```bash
+crontab -e
+30 11 * * * /opt/webservice.benchmark/run_benchmark_wms_cron.sh "https://geo2.dgterritorio.gov.pt/geoserver/caop_continente/wms" "Freguesias"
+15 11 * * * /opt/webservice.benchmark/run_benchmark_wmts_cron.sh "https://cartografia.dgterritorio.gov.pt/ortos2018/service" "Ortos2018-RGB"
+```
