@@ -54,20 +54,20 @@ In a nutshell:
 
 |Argument|Description| Example| Default |
 |:------:|:---------:|:-------:|:---------:|
-| `-h/-host`   | Host/Server will full OGC service path | [https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023](https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023) | Mandatory NO default |
+| `-h/-host`   | Host/Server will full OGC service path | [https://ortos.dgterritorio.gov.pt/wms/ortosat2023](https://ortos.dgterritorio.gov.pt/wms/ortosat2023) | Mandatory NO default |
 |`--headless`| For locust to run on command line mode | --headless | Default locust is working on webgui|
 |`--random-seed`|  Random seed to generate random request |   --random-seed 2129 | 1640 |
-|`--layer-name` | OGC service layer to be used | --layer-name Ortoimagens2023-IRG| First layer in service found on GetCapabilites XML document |
+|`--layer-name` | OGC service layer to be used | --layer-name ortoSat2023-CorVerdadeira| First layer in service found on GetCapabilites XML document |
 |`--bbox-area`| Area of bounding box for GetMap request km2| --bbox-area 50.0 | Default of 100.0|
 |`--bbox-ratio` | Width/Height ratio of bbox| --bbox-ratio | Default of 1.0 (square)|  
 
 Example of command:
 
 ```bash
-locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  --random-seed 7776 --bbox-area 100 --layer-name Ortoimagens2023-RGB   --headless -u 10 -r 1 -t 2m --html reports/ortoimagens2023_u10_r1_t2_s7776.html  --loglevel DEBUG --logfile logs/ortoimagens2023_u10_r1_t2_s7776.log 2>&1 |  tee reports/ortoimagens2023_u10_r1_t2_s7776.txt
+locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortosat2023  --random-seed 7776 --bbox-area 100 --layer-name ortoSat2023-CorVerdadeira  --headless -u 10 -r 1 -t 2m --html reports/ortosat2023_u10_r1_t2_s7776.html  --loglevel DEBUG --logfile logs/ortosat2023_u10_r1_t2_s7776.log 2>&1 |  tee reports/ortosat2023_u10_r1_t2_s7776.txt
 ```
 
-The graphics and requests made will be in file: `ortoimagens2023_u10_r1_t2_s7776.html`
+The graphics and requests made will be in file: `ortosat2023_u10_r1_t2_s7776.html`
 That can be open in a normal browser
 
 ### Docker run WMS
@@ -126,7 +126,7 @@ Note: `2>&1 | tee wmts.ortos2021.r1.u1.s1640.txt` will pipe bash consolte conten
 By removing the flag `--headless` locust will start a local server and the provided URL can be open in a browser for viewing the live execution:
 
 ```bash
-locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  --random-seed 2776 --bbox-area 10000 --layer-name Ortoimagens2023-RGB  -u 10 -r 1 -t 2m --html reports/ortoimagens2023_u10_r1_t2_s2776.html  --loglevel INFO
+locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortosat2023  --random-seed 2776 --bbox-area 10000 --layer-name ortoSat2023-CorVerdadeira  -u 10 -r 1 -t 2m --html reports/ortosat2023_u10_r1_t2_s2776.html  --loglevel INFO
 [2024-04-26 15:45:46,525] moura002/INFO/locust.main: Starting web interface at http://0.0.0.0:8089
 [2024-04-26 15:45:46,534] moura002/INFO/locust.main: Starting Locust 2.24.1
 ```
