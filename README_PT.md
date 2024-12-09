@@ -54,20 +54,20 @@ In a nutshell:
 
 |Argumento|Descrição| Exemplo| Default |
 |:------:|:---------:|:-------:|:---------:|
-| `-h/-host`   | Host/Servidor com o caminho completo do serviço OGC | [https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023](https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023) | Obrigatório, sem valor default |
+| `-h/-host`   | Host/Servidor com o caminho completo do serviço OGC | [https://ortos.dgterritorio.gov.pt/wms/ortosat2023](https://ortos.dgterritorio.gov.pt/wms/ortosat2023) | Obrigatório, sem valor default |
 |`--headless`| Obrigatório, para poder correr na linha de comandos | --headless | Default e' o uso do  webgui|
 |`--random-seed`|  Semente aleatória para gerar solicitações aleatórias |   --random-seed 2129 | 1640 |
-|`--layer-name` | Camada de serviço OGC a ser usada | --layer-name Ortoimagens2023-IRG| Primeira camada encontrada no documento XML GetCapabilites |
+|`--layer-name` | Camada de serviço OGC a ser usada | --layer-name ortoSat2023-CorVerdadeira| Primeira camada encontrada no documento XML GetCapabilites |
 |`--bbox-area`| Primeira camada encontrada no documento XML GetCapabilites| --bbox-area 50.0 | Default de 100.0|
 |`--bbox-ratio` |Proporção largura/altura da bounding box| --bbox-ratio | Default of 1.0 (square)|  
 
 Exemplo de comando:
 
 ```bash
-locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  --random-seed 7776 --bbox-area 100 --layer-name Ortoimagens2023-RGB   --headless -u 10 -r 1 -t 2m --html reports/ortoimagens2023_u10_r1_t2_s7776.html  --loglevel DEBUG --logfile logs/ortoimagens2023_u10_r1_t2_s7776.log 2>&1 |  tee reports/ortoimagens2023_u10_r1_t2_s7776.txt
+locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortosat2023  --random-seed 7776 --bbox-area 100 --layer-name ortoSat2023-CorVerdadeira   --headless -u 10 -r 1 -t 2m --html reports/ortosat2023_u10_r1_t2_s7776.html  --loglevel DEBUG --logfile logs/ortosat2023_u10_r1_t2_s7776.log 2>&1 |  tee reports/ortosat2023_u10_r1_t2_s7776.txt
 ```
 
-Os gráficos finais e solicitações feitas estarão no ficheiro: `ortoimagens2023_u10_r1_t2_s7776.html` no directorio `reports`
+Os gráficos finais e solicitações feitas estarão no ficheiro: `ortosat2023_u10_r1_t2_s7776.html` no directorio `reports`
 Os ficheiros html podem ser abertos em qualquer navegador/browser normal.
 
 ## Comandos WMTS (headless)
@@ -126,7 +126,7 @@ O commando implementa os directorios entre computador local e anfitrião (-v $(p
 Removendo o argumento `--headless`, o locust iniciará um servidor local e a URL fornecida pode ser aberta em um navegador para visualizar a execução ao vivo:
 
 ```bash
-locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortoimagens2023  --random-seed 2776 --bbox-area 10000 --layer-name Ortoimagens2023-RGB  -u 10 -r 1 -t 2m --html reports/ortoimagens2023_u10_r1_t2_s2776.html  --loglevel INFO
+locust -f wms.py  --host https://ortos.dgterritorio.gov.pt/wms/ortosat2023  --random-seed 2776 --bbox-area 10000 --layer-name ortoSat2023-CorVerdadeira  -u 10 -r 1 -t 2m --html reports/ortosat2023_u10_r1_t2_s2776.html  --loglevel INFO
 [2024-04-26 15:45:46,525] moura002/INFO/locust.main: Starting web interface at http://0.0.0.0:8089
 [2024-04-26 15:45:46,534] moura002/INFO/locust.main: Starting Locust 2.24.1
 ```
