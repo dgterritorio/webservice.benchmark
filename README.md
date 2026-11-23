@@ -60,6 +60,17 @@ In a nutshell:
 |`--layer-name` | OGC service layer to be used | --layer-name ortoSat2023-CorVerdadeira| First layer in service found on GetCapabilites XML document |
 |`--bbox-area`| Area of bounding box for GetMap request km2| --bbox-area 50.0 | Default of 100.0|
 |`--bbox-ratio` | Width/Height ratio of bbox| --bbox-ratio | Default of 1.0 (square)|  
+|`--layers` | Weighted layer mix (overrides `--layer-name`); stats are reported per layer | --layers layerA:55,layerB:45 | not set |
+|`--bbox-areas` | Bbox areas in km2, one picked at random per request (zoom mix; overrides `--bbox-area`) | --bbox-areas 4,16,64,256 | not set |
+|`--crs` | GetMap CRS; must be advertised by the layer (EPSG:3857 is derived from the WGS84 extent if missing) | --crs EPSG:3857 | first BoundingBox CRS of the layer |
+|`--width` / `--height` | GetMap size in pixels | --width 256 --height 256 | 512 |
+|`--user-rps` | Requests per second per user (constant throughput): total rate = users x value | --user-rps 1 | 0 (wait 1-2 s) |
+|`--caps-ratio` | Fraction of requests that are GetCapabilities | --caps-ratio 0.001 | 0 |
+|`--wms-user` / `--wms-password` | HTTP Basic Auth; prefer the env vars `WMS_USER` / `WMS_PASSWORD` | | env vars |
+
+Responses that are not HTTP 200 or not an image (MapServer can answer 200 with an XML exception) are counted as failures. GetCapabilities is read with WMS 1.3.0, once per process. Locust 2.4x does not list these custom options under `--help`; they work all the same.
+
+Stepped load (find the throughput where latency or errors break down): add `step_shape.py`, e.g. `locust -f wms.py,step_shape.py --steps 25,50,100,170 --step-time 180 --user-rps 1 --headless ...`; with `--user-rps 1` each step's user count is its requests per second.
 
 Example of command:
 

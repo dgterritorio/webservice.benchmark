@@ -60,6 +60,17 @@ In a nutshell:
 |`--layer-name` | Camada de serviço OGC a ser usada | --layer-name ortoSat2023-CorVerdadeira| Primeira camada encontrada no documento XML GetCapabilites |
 |`--bbox-area`| Primeira camada encontrada no documento XML GetCapabilites| --bbox-area 50.0 | Default de 100.0|
 |`--bbox-ratio` |Proporção largura/altura da bounding box| --bbox-ratio | Default of 1.0 (square)|  
+|`--layers` | Mistura ponderada de camadas (substitui `--layer-name`); estatísticas por camada | --layers camadaA:55,camadaB:45 | não definido |
+|`--bbox-areas` | Áreas da bbox em km2, uma escolhida ao acaso por pedido (mistura de escalas; substitui `--bbox-area`) | --bbox-areas 4,16,64,256 | não definido |
+|`--crs` | CRS do GetMap; tem de ser anunciado pela camada (EPSG:3857 é calculado a partir da extensão WGS84 se faltar) | --crs EPSG:3857 | primeiro CRS da BoundingBox da camada |
+|`--width` / `--height` | Tamanho do GetMap em píxeis | --width 256 --height 256 | 512 |
+|`--user-rps` | Pedidos por segundo por utilizador (débito constante): débito total = utilizadores x valor | --user-rps 1 | 0 (espera de 1-2 s) |
+|`--caps-ratio` | Fração dos pedidos que são GetCapabilities | --caps-ratio 0.001 | 0 |
+|`--wms-user` / `--wms-password` | HTTP Basic Auth; preferir as variáveis de ambiente `WMS_USER` / `WMS_PASSWORD` | | variáveis de ambiente |
+
+Respostas que não sejam HTTP 200 ou não sejam imagem (o MapServer pode responder 200 com uma exceção XML) contam como falhas. O GetCapabilities é lido em WMS 1.3.0, uma vez por processo. O Locust 2.4x não mostra estas opções em `--help`, mas funcionam.
+
+Carga por degraus (encontrar o débito a partir do qual a latência ou os erros disparam): juntar `step_shape.py`, p. ex. `locust -f wms.py,step_shape.py --steps 25,50,100,170 --step-time 180 --user-rps 1 --headless ...`; com `--user-rps 1` o número de utilizadores de cada degrau é o débito em pedidos por segundo.
 
 Exemplo de comando:
 

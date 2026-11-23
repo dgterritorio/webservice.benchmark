@@ -1,10 +1,35 @@
-import sys, random
+import itertools, math, sys, random
 import urllib.parse
 
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-from locust import FastHttpUser, events, task, between
+from locust import FastHttpUser, constant_throughput, events, task, between
+from gevent.lock import Semaphore
 from owslib.wmts import WebMapTileService
+
+_CAPABILITIES = {}  # host -> WebMapTileService, shared by the users of one process
+_CAPABILITIES_LOCK = Semaphore()  # users starting together wait for the first fetch instead of repeating it
+_USER_IDS = itertools.count()  # distinct, reproducible random stream per simulated user
+_POINTS = {}  # --points file -> list of (x, y), read once per process
+EMPTY_TILE_BYTES = 1024  # a fully transparent PNG is ~854 bytes: sea or outside the coverage
+
+
+def load_points(path):
+    """(x, y) tile locations from a CSV with an x,y header, e.g. mainland_points.csv (EPSG:3763)."""
+    if path not in _POINTS:
+        with open(path) as f:
+            next(f)
+            _POINTS[path] = [tuple(float(v) for v in line.split(",")) for line in f if line.strip()]
+    return _POINTS[path]
+
+
+def point_to_tile(x, y, matrix):
+    """(col, row) of the tile holding (x, y) in a projected TileMatrix (OGC 0.28 mm pixel)."""
+    left, top = matrix.topleftcorner
+    span = matrix.scaledenominator * 0.00028 * matrix.tilewidth
+    col = math.floor((x - left) / span)
+    row = math.floor((top - y) / span)
+    return min(max(col, 0), matrix.matrixwidth - 1), min(max(row, 0), matrix.matrixheight - 1)
 
 import logging
 
@@ -73,6 +98,26 @@ def init_parser(parser):
         default=None,
         help="Tilematrix of Tilematrixset to be used. In not set, if not set, will determine the median level of pyramid (Tilematrixset) and use it",
     )
+    parser.add_argument(
+        "--points",
+        type=str,
+        default="",
+        help="CSV of x,y locations in the CRS of the TileMatrixSet (e.g. mainland_points.csv, EPSG:3763): tiles are drawn from these, so they stay on land",
+    )
+    parser.add_argument(
+        "--user-rps",
+        type=float,
+        default=0,
+        help="Requests per second per user (constant throughput), so total rate = users x this value. 0 keeps the 1-2 s wait",
+    )
+
+
+@events.init.add_listener
+def _apply_user_rps(environment, **_kwargs):
+    """Apply --user-rps before any user starts (wait_time is a class attribute)."""
+    opts = environment.parsed_options
+    if opts is not None and getattr(opts, "user_rps", 0) > 0:
+        WMTSBenchmark.wait_time = constant_throughput(opts.user_rps)
 
 
 class WMTSBenchmark(FastHttpUser):
@@ -95,7 +140,12 @@ class WMTSBenchmark(FastHttpUser):
         # Timout extended for very slow servers
         self.client.timeout = 120  # timeout is in seconds
 
-        self.wmts = WebMapTileService(self.host)
+        # One GetCapabilities per process, not per user: with thousands of users the per-user fetch was
+        # a capabilities storm at every step, outside the Locust statistics.
+        with _CAPABILITIES_LOCK:
+            if self.host not in _CAPABILITIES:
+                _CAPABILITIES[self.host] = WebMapTileService(self.host)
+        self.wmts = _CAPABILITIES[self.host]
 
         self.layers = list(self.wmts.contents.keys())
         ##### TO BE REFACTORED ####
@@ -182,6 +232,11 @@ class WMTSBenchmark(FastHttpUser):
             seed=self.environment.parsed_options.random_seed + 1,
         )
         # self.gen_row=random_number_generator(4, 985-1, seed=self.environment.parsed_options.random_seed+1)
+        opts = self.environment.parsed_options
+        self.points = load_points(opts.points) if opts.points else None
+        # The worker index keeps users of different --processes apart (each process counts users from 0).
+        worker = getattr(self.environment.runner, "worker_index", 0)
+        self.rng = random.Random(f"{opts.random_seed}-{worker}-{next(_USER_IDS)}")
         logger.info(
             f"Using tile random seed:{self.environment.parsed_options.random_seed}"
         )
@@ -217,8 +272,11 @@ class WMTSBenchmark(FastHttpUser):
         """
         # Constructing the URL path for the specific tile request
 
-        tile_col = next(self.gen_col)
-        tile_row = next(self.gen_row)
+        if self.points:
+            tile_col, tile_row = point_to_tile(*self.rng.choice(self.points), self.layer_tiles)
+        else:
+            tile_col = next(self.gen_col)
+            tile_row = next(self.gen_row)
 
         #url_path = f"{self.host}?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&
         #LAYER={self.layer_name}&STYLE=default&
@@ -229,7 +287,15 @@ class WMTSBenchmark(FastHttpUser):
         url_path = self.get_url(tile_col,tile_row)
         logger.debug(f"URL for request: {url_path}")
         
-        response = self.client.get(url_path)
+        # One name for all tiles (per-URL names made the statistics useless); empty tiles apart.
+        with self.client.get(url_path, name="GetTile", catch_response=True) as resp:
+            if resp.status_code != 200:
+                resp.failure(f"HTTP {resp.status_code}")
+            elif len(resp.content or b"") < EMPTY_TILE_BYTES:
+                resp.request_meta["name"] = "GetTile (empty)"
+                resp.success()
+            else:
+                resp.success()
 
     def get_url(self,tile_col,tile_row):
         """

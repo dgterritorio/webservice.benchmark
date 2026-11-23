@@ -2,7 +2,7 @@ FROM docker.io/python:3.12.3-slim-bookworm@sha256:2be8daddbb82756f7d1f2c7ece706a
 # docker build --no-cache --progress=plain -t website.benchmark:v0.0.1 -f Dockerfile .
 # docker run --rm benchmark:v0.0.1 -f wms.py --help
 
-COPY wms.py wmts.py /
+COPY wms.py wmts.py wfs.py step_shape.py mainland_points.csv /
 COPY utils /utils
 COPY requirements.txt /
 RUN pip install --no-cache-dir -r /requirements.txt
